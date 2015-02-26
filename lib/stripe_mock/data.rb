@@ -14,7 +14,7 @@ module StripeMock
         delinquent: false,
         discount: nil,
         account_balance: 0,
-        cards: {
+        sources: {
           object: "list",
           total_count: cards.size,
           url: "/v1/customers/#{cus_id}/cards",
@@ -26,7 +26,7 @@ module StripeMock
           url: "/v1/customers/#{cus_id}/subscriptions",
           data: []
         },
-        default_card: nil
+        default_source: nil
       }.merge(params)
     end
 
@@ -44,7 +44,7 @@ module StripeMock
         fee: 0,
         fee_details: [
         ],
-        card: {
+        source: {
           object: "card",
           last4: "4242",
           type: "Visa",

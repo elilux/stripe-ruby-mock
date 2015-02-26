@@ -3,7 +3,8 @@ module StripeMock
     module Helpers
 
       def get_card(object, card_id, class_name='Customer')
-        card = object[:cards][:data].find{|cc| cc[:id] == card_id }
+        card_or_source = (object[:object] == 'customer' || object[:object] == 'charge') ? 'source' : 'card'
+        card = object[:"#{card_or_source}s"][:data].find{|cc| cc[:id] == card_id }
         if card.nil?
           msg = "#{class_name} #{object[:id]} does not have card #{card_id}"
           raise Stripe::InvalidRequestError.new(msg, 'card', 404)
@@ -13,37 +14,40 @@ module StripeMock
 
       def add_card_to_object(type, card, object, replace_current=false)
         card[type] = object[:id]
+        card_or_source = (type == :customer || type == :charge) ? 'source' : 'card'
 
         if replace_current
-          object[:cards][:data].delete_if {|card| card[:id] == object[:default_card]}
-          object[:default_card] = card[:id]
+          object[:"#{card_or_source}s"][:data].delete_if {|card| card[:id] == object[:"default_#{card_or_source}"]}
+          object[:"default_#{card_or_source}"] = card[:id]
         else
-          object[:cards][:total_count] += 1
+          object[:"#{card_or_source}s"][:total_count] += 1
         end
 
-        object[:default_card] = card[:id] unless object[:default_card]
-        object[:cards][:data] << card
+        object[:"default_#{card_or_source}"] = card[:id] unless object[:"default_#{card_or_source}"]
+        object[:"#{card_or_source}s"][:data] << card
 
         card
       end
 
       def retrieve_object_cards(type, type_id, objects)
         resource = assert_existence type, type_id, objects[type_id]
-        cards = resource[:cards]
+        card_or_source = (type == :customer || objects[:object] == :charge) ? 'source' : 'card'
+        sources = resource[:"#{card_or_source}s"]
 
-        Data.mock_list_object(cards[:data])
+        Data.mock_list_object(sources[:data])
       end
 
       def delete_card_from(type, type_id, card_id, objects)
         resource = assert_existence type, type_id, objects[type_id]
+        card_or_source = (type == :customer || objects[:object] == :charge) ? 'source' : 'card'
 
         assert_existence :card, card_id, get_card(resource, card_id)
 
         card = { id: card_id, deleted: true }
-        resource[:cards][:data].reject!{|cc|
+        resource[:"#{card_or_source}s"][:data].reject!{|cc|
           cc[:id] == card[:id]
         }
-        resource[:default_card] = resource[:cards][:data].count > 0 ? resource[:cards][:data].first[:id] : nil
+        resource[:"default_#{card_or_source}"] = resource[:"#{card_or_source}s"][:data].count > 0 ? resource[:"#{card_or_source}s"][:data].first[:id] : nil
         card
       end
 
