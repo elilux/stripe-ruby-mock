@@ -3,11 +3,13 @@ module StripeMock
     module Helpers
 
       def get_card(object, card_id, class_name='Customer')
-        card_or_source = (object[:object] == 'customer' || object[:object] == 'charge') ? 'source' : 'card'
+        customer_or_charge = (object[:object] == 'customer' || object[:object] == 'charge') ? true : false
+        card_or_source = customer_or_charge ? 'source' : 'card'
+        param = customer_or_charge ? 'id' : 'card'
         card = object[:"#{card_or_source}s"][:data].find{|cc| cc[:id] == card_id }
         if card.nil?
-          msg = "#{class_name} #{object[:id]} does not have card #{card_id}"
-          raise Stripe::InvalidRequestError.new(msg, 'card', 404)
+          msg = customer_or_charge ? "There is no source with ID #{card_id}." : "Recipient #{object[:id]} does not have a card with ID #{card_id}"
+          raise Stripe::InvalidRequestError.new(msg, param, 404)
         end
         card
       end
