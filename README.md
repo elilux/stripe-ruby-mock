@@ -47,7 +47,7 @@ describe MyApp do
     # This doesn't touch stripe's servers nor the internet!
     customer = Stripe::Customer.create({
       email: 'johnny@appleseed.com',
-      card: stripe_helper.generate_card_token
+      source: stripe_helper.generate_card_token
     })
     expect(customer.email).to eq('johnny@appleseed.com')
   end
